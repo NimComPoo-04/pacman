@@ -2,51 +2,51 @@
 #define _GHOST_H_
 
 #include <SDL2/SDL.h>
-#include "map.h"
+#include "entity.h"
 #include "pacman.h"
+#include "map.h"
 
-typedef struct
+enum
 {
-	enum {
-		BLINKY,	// red
-		INKY,	// cyan
-		PINKY,  // pink
-		CLYDE   // orange
-	}type;
+	START,
+	SCATTER,
+	CHASE,
+	FRIGHTENTED,
+	DEAD
+};
 
-	enum {
-		SCATTER, // next 15 seconds then follow 
-		FOLLOW, // next 45 seconds then scatter
-		PANIC,	 // when pacman eats big, 10 seconds
-	} state;
+typedef struct ghost_t
+{
+	entity_t entity;
+	int state;
+	
+	int target_x;
+	int target_y;
 
-	int x; int y;
-	int w; int h;
+	pacman_t *pacman;
 
-	int vx;
-	int vy;
+	int frighten_timer;
+	int scatter_timer;
+	int chase_timer;
 
-	int from_mx;
-	int from_my;
-
-	int target_mx;
-	int target_my;
-
-	map_t *map;
-
-	char *visited_nodes;
-
-	char stack[1024];
-	int  top;
+	void(*target_reassign)(struct ghost_t *, map_t *map, void *);
 } ghost_t;
 
-void ghost_update_target(ghost_t *g, int x, int y);
-int ghost_add_move(ghost_t *g, char move);
-int ghost_get_move(ghost_t *g);
-int ghost_drop_stack(ghost_t *g);
-void ghost_generate_path(ghost_t *g);
+// changes state
+int ghost_update(ghost_t *g, map_t *map, Uint32 frames, void *v);
+void ghost_debug_draw(ghost_t *g, SDL_Renderer *ren);
 
-void ghost_update(ghost_t *g, pacman_t *p, int ticks);
-void ghost_draw(ghost_t *g, SDL_Renderer *renderer);
+void ghost_draw(ghost_t *g, SDL_Renderer *ren, Uint32 color);
+
+// Send blinky when initing clyde
+enum
+{
+	BLINKY,
+	PINKY,
+	INKY,
+	CLYDE
+};
+
+ghost_t ghost_create(pacman_t *p, map_t *m, int type);
 
 #endif

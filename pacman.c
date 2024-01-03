@@ -1,81 +1,88 @@
 #include "pacman.h"
 
-void pacman_change_dir(pacman_t *p, int d, int v)
+#define PI 3.1415
+
+float RAD(int a)
 {
-	p->direction = d;
-
-	switch(d)
-	{
-		case UP:    p->vx = 0; p->vy = -v; break;
-		case DOWN:  p->vx = 0; p->vy = v; break;
-		case LEFT:  p->vx = -v; p->vy = 0; break;
-		case RIGHT: p->vx = v; p->vy = 0; break;
-	}
-}
-
-int pacman_move(pacman_t *p, map_t *m)
-{
-	int tx= p->x;
-	int ty= p->y;
-
-	p->x = p->x + p->vx;
-	p->y = p->y + p->vy;
-
-	if(p->x > m->cell_width * m->width) p->x = 0;
-	if(p->x < 0) p->x = m->cell_width * (m->width - 1);
-	if(p->y > m->cell_height * m->height) p->y = 0;
-	if(p->y < 0) p->y = m->cell_height * (m->height - 1);
-
-	char k = map_pos_at(m, p->x / m->cell_width, p->y / m->cell_height);
-	if(k == WALL)
-	{
-		p->x = tx;
-		p->y = ty;
-		return 0;
-	}
-
-	k = map_pos_at(m, (p->x + p->w) / m->cell_width, p->y / m->cell_height);
-	if(k == WALL)
-	{
-		p->x = tx;
-		p->y = ty;
-		return 0;
-	}
-
-	k = map_pos_at(m, p->x / m->cell_width, (p->y + p->h) / m->cell_height);
-	if(k == WALL)
-	{
-		p->x = tx;
-		p->y = ty;
-		return 0;
-	}
-
-	k = map_pos_at(m, (p->x + p->w) / m->cell_width, (p->y + p->h) / m->cell_height);
-	if(k == WALL)
-	{
-		p->x = tx;
-		p->y = ty;
-		return 0;
-	}
-
-	return 1;
+	return PI * a / 180;
 }
 
 void pacman_draw(pacman_t *p, SDL_Renderer *r, int time)
 {
 	SDL_SetRenderDrawColor(r, 0xff, 0xff, 0, 0);
-	SDL_Rect rec = {p->x, p->y, p->w, p->h};
-	SDL_RenderFillRect(r, &rec);
+
+	for(int x = -p->entity.w * 4/5; x <= p->entity.w * 4/5; x++)
+	{
+		for(int y = -p->entity.h * 4/5; y <= p->entity.h * 4/5; y++)
+		{
+			if(x * x + y * y <= p->entity.h * p->entity.h * 16 / 25)
+				SDL_RenderDrawPoint(r, x + p->entity.x, y + p->entity.y);
+
+		}
+	}
+
+	float tx = tan(RAD(time % 55));
+
+	SDL_SetRenderDrawColor(r, 0, 0, 0, 0);
+
+	for(int x = -p->entity.w * 4/5; x <= p->entity.w * 4/5; x++)
+	{
+		for(int y = -p->entity.h * 4/5; y <= p->entity.h * 4/5; y++)
+		{
+			switch(p->entity.direction)
+			{
+				case RIGHT:
+					if((y < (x + 5) * tx && y > - (x + 5) * tx ))
+						SDL_RenderDrawPoint(r, x + p->entity.x, y + p->entity.y);
+					break;
+
+				case LEFT:
+					if((y < (-x + 5) * tx && y > - (-x + 5) * tx ))
+						SDL_RenderDrawPoint(r, x + p->entity.x, y + p->entity.y);
+					break;
+
+				case DOWN:
+					if((x < (y + 5) * tx && x > - (y + 5) * tx ))
+						SDL_RenderDrawPoint(r, x + p->entity.x, y + p->entity.y);
+					break;
+
+				case UP:
+					if((x < (-y + 5) * tx && x > -(-y + 5) * tx ))
+						SDL_RenderDrawPoint(r, x + p->entity.x, y + p->entity.y);
+					break;
+			}
+		}
+	}
 }
 
-void pacman_eat(pacman_t *p, map_t *m)
+int pacman_eat(pacman_t *p, map_t *m)
 {
-	int i = (p->x + p->w / 2) / m->cell_width;
-	int j = (p->y + p->h / 2) / m->cell_height;
+	int x = p->entity.x / m->cell_width;
+	int y = p->entity.y / m->cell_height;
 
-	if(map_pos_at(m, i, j) == NORMAL_FOOD || map_pos_at(m, i, j) == BIG_FOOD)
+	int k = map_pos_at(m, x, y);
+
+	if( k == BIG_FOOD || k ==  NORMAL_FOOD || k ==  RED_FOOD)
 	{
-		m->buffer[j * m->width + i] = NONE;
+		m->buffer[(p->entity.x / m->cell_width) + (p->entity.y / m->cell_height) * m->width] = NONE;
 		p->score++;
 	}
+
+	return k == BIG_FOOD;
+}
+
+pacman_t pacman_create_default(int cw, int ch)
+{
+	return (pacman_t){
+		.entity = {
+		.direction = -1,
+			.x = cw * 14.5,
+			.y = ch * 23.5,
+			.w = cw - 1,
+			.h = ch - 1,
+			.vx = cw / 5,
+			.vy = ch / 5
+		},
+			.score = 0
+	};
 }

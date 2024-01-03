@@ -24,7 +24,7 @@ typedef struct
 } map_t;
 
 map_t map_create_default(int width, int height);
-void map_draw(map_t *map, SDL_Renderer *renderer);
+void map_draw(map_t *map, SDL_Renderer *renderer, uint32_t color);
 
 // Afully sus :) Why am i doing this? I am lazy. Will it come back to haunt me, YES.
 extern int(*map_pos_at)(map_t *m, int x, int y);

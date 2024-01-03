@@ -16,9 +16,9 @@ static char def_map_map_buffer[] =
 		"     *.***** ** *****.*     "
 		"     *.**          **.*     "
 		"     *.** ***__*** **.*     "
-		"******.** *      * **.******"
-		"      .   *      *   .      "
-		"******.** *      * **.******"
+		"******.** **    ** **.******"
+		"      .   **    **   .      "
+		"******.** ******** **.******"
 		"     *.** ******** **.*     "
 		"     *.**          **.*     "
 		"     *.** ******** **.*     "
@@ -63,7 +63,8 @@ map_t map_create_default(int width, int height)
 
 	map_pos_at = at;
 
-	m.buffer = calloc(sizeof(char), m.width * m.height);
+	if(m.buffer == NULL)
+		m.buffer = calloc(sizeof(char), m.width * m.height);
 	memcpy(m.buffer, def_map_map_buffer, sizeof def_map_map_buffer);
 
 	int x = 0, y = 0;
@@ -79,15 +80,13 @@ map_t map_create_default(int width, int height)
 	return m;
 }
 
-void map_draw(map_t *map, SDL_Renderer *render)
+void map_draw(map_t *map, SDL_Renderer *render, uint32_t color)
 {
 	const int lw = map->cell_width;
 	const int lh = map->cell_height;
 
 	const int ldw = lw * 10 / 29;
 	const int ldh = lh * 10 / 29;
-
-	SDL_SetRenderDrawColor(render, 0, 0, 0xff, 0);
 
 	// SDL_Rect r;
 
@@ -109,7 +108,7 @@ void map_draw(map_t *map, SDL_Renderer *render)
 
 				case WALL:
 					{
-						SDL_SetRenderDrawColor(render, 0, 0, 0xff, 0);
+						SDL_SetRenderDrawColor(render, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 0);
 
 						int c = 1;
 
@@ -186,9 +185,6 @@ void map_draw(map_t *map, SDL_Renderer *render)
 					}
 					break;
 			}
-
-			SDL_SetRenderDrawColor(render, 0xff, 0, 0, 0);
-		//	SDL_RenderDrawRect(render, &r);
 		}
 	}
 }

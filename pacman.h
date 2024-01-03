@@ -3,23 +3,16 @@
 
 #include "SDL2/SDL.h"
 #include "map.h"
+#include "entity.h"
 
-typedef struct
-{
-	int x; int y;
-	int w; int h;
-
-	int vx; int vy;
-
+typedef struct {
+	entity_t entity;
 	int score;
-
-	enum { UP, DOWN, LEFT, RIGHT } direction;
 } pacman_t;
 
-int pacman_move(pacman_t *p, map_t *m);
+pacman_t pacman_create_default(int, int);
 void pacman_draw(pacman_t *p, SDL_Renderer *r, int time);
-void pacman_change_dir(pacman_t *p, int d, int v);
-void pacman_eat(pacman_t *p, map_t *m);
+int pacman_eat(pacman_t *p, map_t *m);
 
 #endif
 
