@@ -6,8 +6,7 @@
 
 typedef struct
 {
-	enum
-	{ UP, DOWN, LEFT, RIGHT } direction;
+	enum { UP, DOWN, LEFT, RIGHT } direction;
 
 	int allow_door;
 
