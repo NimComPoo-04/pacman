@@ -56,7 +56,7 @@ void main_loop(void)
 
 	time = SDL_GetTicks();
 
-	if(SDL_PollEvent(&events))
+	while(SDL_PollEvent(&events))
 	{
 		switch(events.type)
 		{
@@ -81,7 +81,7 @@ void main_loop(void)
 				       break;
 
 			case SDL_MOUSEBUTTONDOWN:
-				       if(events.button.button == SDL_BUTTON_LEFT)
+				       if(events.button.button == SDL_BUTTON_MIDDLE)
 				       {
 					       if(events.button.x > WIDTH - 30 && events.button.y < 30 && pause)
 						       game_loop = 0;
@@ -189,10 +189,10 @@ void main_loop(void)
 	if(!party_frames && !deady_frames)
 	{
 		// Ghost Update
-		isweeded += ghost_update(&blinky, &map, Frame, NULL);
-		isweeded += ghost_update(&pinky, &map, Frame, NULL);
-		isweeded += ghost_update(&inky, &map, Frame, &blinky);
-		isweeded += ghost_update(&clyde, &map, Frame, NULL);
+		isweeded += ghost_update(&blinky, &map, SDL_GetTicks() * 16, NULL);
+		isweeded += ghost_update(&pinky, &map, SDL_GetTicks() * 16, NULL);
+		isweeded += ghost_update(&inky, &map, SDL_GetTicks() * 16, &blinky);
+		isweeded += ghost_update(&clyde, &map, SDL_GetTicks() * 16, NULL);
 	}
 
 	if(isweeded)
@@ -223,16 +223,16 @@ RENDER:
 	// ghost_update(&blinky, &map, Frame);
 	if(party_frames)
 	{
-		party_render(Frame);
+		party_render(SDL_GetTicks() * 16);
 		party_frames--;
 	}
 	else if(deady_frames)
 	{
-		deady_render(Frame);
+		deady_render(SDL_GetTicks() * 16);
 		deady_frames--;
 	}
 	else
-		normal_render(Frame);
+		normal_render(SDL_GetTicks() * 16);
 
 	if(pause)
 	{
@@ -279,7 +279,7 @@ int main(void)
 	init();
 	
 	// main_loop;
-	emscripten_set_main_loop(main_loop, -1, 1);
+	emscripten_set_main_loop(main_loop, 0, 1);
 
 	free(map.buffer);
 

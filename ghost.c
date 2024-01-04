@@ -86,12 +86,8 @@ int ghost_update(ghost_t *g, map_t *m, Uint32 frames, void *v)
 				}	
 			}
 
-			for(int i = 0; i < 10; i++)
-			{
+			while(!entity_move(&g->entity, m))
 				g->entity.direction = rand()%4;
-				if(entity_move(&g->entity, m))
-					break;
-			}
 
 			if(g->frighten_timer == 0)
 			{
@@ -296,8 +292,8 @@ ghost_t ghost_create(pacman_t *p, map_t *m, int type)
 	ghost_t g = {
 		.entity = {
 			.direction = -1,
-			.vx = m->cell_width - 1,
-			.vy = m->cell_height - 1,
+			.vx = m->cell_width / 5,
+			.vy = m->cell_height / 5,
 			.w = m->cell_width - 1,
 			.h = m->cell_height - 1,
 		},

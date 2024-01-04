@@ -2,53 +2,65 @@
 
 int entity_move(entity_t *e, map_t *m)
 {
+	int tx = e->x;
+	int ty = e->y;
+
+	int vx = 0;
+	int vy = 0;
+
 	switch(e->direction)
 	{
 		case UP:
 			e->y -= e->vy;
+			vy = -1;
 			break;
 
 		case DOWN:
 			e->y += e->vy;
+			vy = 1;
 			break;
 
 		case LEFT:
 			e->x -= e->vx;
+			vx = -1;
 			break;
 
 		case RIGHT:
 			e->x += e->vx;
+			vx = 1;
 			break;
 	}
 
 	if(entity_collision_map(e, m, DOOR) && e->direction == DOWN && !e->allow_door)
 	{
-		while(entity_collision_map(e, m, DOOR))
+		e->x = tx;
+		e->y = ty;
+
+		while(!entity_collision_map(e, m, WALL))
 		{
-			e->x -= (e->direction == RIGHT) - (e->direction == LEFT);
-			e->y -= (e->direction == DOWN) - (e->direction == UP);
-		}
+			e->x += vx;
+			e->y += vy;
+		}		
+		
+		e->x -= vx;
+		e->y -= vy;
 
 		return 0;
 	}
 
 	if(entity_collision_map(e, m, WALL))
 	{
-		// FIXME: HACK, Get the equation and fix this, loop is bad for health
-		// Corrects miss alignment
-		int count = 0;
-		while(entity_collision_map(e, m, WALL) && count < 100)
+		e->x = tx;
+		e->y = ty;
+
+		while(!entity_collision_map(e, m, WALL))
 		{
-			e->x -= (e->direction == RIGHT) - (e->direction == LEFT);
-			e->y -= (e->direction == DOWN) - (e->direction == UP);
-			count++;
-		}
+			e->x += vx;
+			e->y += vy;
+		}		
 		
-		if(count >= 100)
-		{
-			e->x = 14;
-			e->y = 14;
-		}
+		e->x -= vx;
+		e->y -= vy;
 
 		return 0;
 	}
