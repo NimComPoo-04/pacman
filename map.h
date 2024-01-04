@@ -7,7 +7,6 @@ enum
 {
 	NORMAL_FOOD = '.',
 	BIG_FOOD = 'o',
-	RED_FOOD = 'x',
 	NONE = ' ',
 	DOOR = '_',
 	WALL = '*',

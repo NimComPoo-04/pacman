@@ -62,7 +62,7 @@ int pacman_eat(pacman_t *p, map_t *m)
 
 	int k = map_pos_at(m, x, y);
 
-	if( k == BIG_FOOD || k ==  NORMAL_FOOD || k ==  RED_FOOD)
+	if( k == BIG_FOOD || k ==  NORMAL_FOOD)
 	{
 		m->buffer[(p->entity.x / m->cell_width) + (p->entity.y / m->cell_height) * m->width] = NONE;
 		p->score++;

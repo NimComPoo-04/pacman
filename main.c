@@ -6,13 +6,13 @@
 #include "pacman.h"
 #include "ghost.h"
 
-#define WIDTH  (280 * 3)
-#define HEIGHT (310 * 3)
+#define WIDTH  (280 * 2)
+#define HEIGHT (310 * 2)
 
 // Time Taken to maze display
 
 static SDL_Window *window = NULL;
-SDL_Renderer *renderer = NULL;
+static SDL_Renderer *renderer = NULL;
 static SDL_Event events = {0};
 
 static map_t map;
@@ -26,6 +26,9 @@ static void normal_render(Uint32);
 static void party_render(Uint32 Frames);
 static void deady_render(Uint32 Frames);
 
+int wait_time = 7;
+int lives = 3;
+
 int main(void)
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER))
@@ -36,10 +39,13 @@ int main(void)
 			SDL_WINDOWPOS_CENTERED,
 			WIDTH+1, HEIGHT+1, SDL_WINDOW_BORDERLESS);
 
+	SDL_SetRelativeMouseMode(SDL_TRUE);
+
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
 	// Init
 	int game_loop = 1;
+	int pause = 0;
 
 	Uint32 time = SDL_GetTicks();
 	Uint32 Frame = 0;
@@ -67,14 +73,42 @@ int main(void)
 						case SDLK_DOWN: move = DOWN; break;
 						case SDLK_ESCAPE: game_loop = 0; break;
 						case SDLK_SPACE:
-							SDL_Log("Score: %d == %d",
-									pacman.score,
-									map.food_count);
+								  if(!pause)
+									  SDL_SetRelativeMouseMode(SDL_FALSE);
+								  else
+									  SDL_SetRelativeMouseMode(SDL_TRUE);
+
+								  pause = !pause;
 							break;
+					}
+					break;
+
+				case SDL_MOUSEMOTION:
+					{
+						const int x = abs(events.motion.xrel);
+						const int y = abs(events.motion.yrel);
+
+						if(x > y)
+						{
+							if(events.motion.xrel < 0)
+								move = LEFT;
+							else
+								move = RIGHT;
+						}
+						else
+						{
+							if(events.motion.yrel < 0)
+								move = UP;
+							else
+								move = DOWN;
+						}
 					}
 					break;
 			}
 		}
+
+		if(pause)
+			goto RENDER;
 
 		// Pacman Update
 		int old_move = pacman.entity.direction;
@@ -103,7 +137,11 @@ int main(void)
 		{
 			party_frames = 100;
 			map.food_count = 0;
+			if(wait_time != 0)
+				wait_time--;
 		}
+
+
 		if(party_frames == 1)
 		{
 			SDL_Log("Time Elapsed on Stage: %d", Frame * 16 / 1000);
@@ -126,6 +164,13 @@ int main(void)
 		if(isweeded)
 		{
 			deady_frames = 100;
+			if(lives)
+				lives--;
+			else
+			{
+				lives = 3;
+				wait_time = 7;
+			}
 		}
 		if(deady_frames == 1)
 		{
@@ -137,11 +182,11 @@ int main(void)
 		}
 
 		// RENDERING
+RENDER:
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 		SDL_RenderClear(renderer);
 
 		// ghost_update(&blinky, &map, Frame);
-
 		if(party_frames)
 		{
 			party_render(Frame);
@@ -155,11 +200,20 @@ int main(void)
 		else
 			normal_render(Frame);
 
+		if(pause)
+		{
+			SDL_SetRenderDrawColor(renderer, 0xff, 0, 0, 0);
+			SDL_Rect r = {.x = 10, .y = 10, .w = 10, .h = 20};
+			SDL_RenderFillRect(renderer, &r);
+			r.x += 15;
+			SDL_RenderFillRect(renderer, &r);
+		}
+
 		SDL_RenderPresent(renderer);
 
 		// Time Keeping
 		Avg += SDL_GetTicks() - time;
-		while(SDL_GetTicks() - time < 30); // 60 fps <=> 16.66 spf
+		while(SDL_GetTicks() - time < 16); // 60 fps <=> 16.66 spf
 		time = SDL_GetTicks();
 		Frame += 1;
 	}
@@ -171,15 +225,46 @@ int main(void)
 	SDL_Quit();
 }
 
+static void draw_lives()
+{
+	SDL_Rect r = {.x = 12.5 * map.cell_width,
+		.y = 15.5 * map.cell_width,
+		.w = map.cell_width,
+		.h = map.cell_height};
+
+	float tx = 0.5;
+
+	for(int i = 0; i < lives; i++)
+	{
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+		SDL_RenderFillRect(renderer, &r);
+		SDL_SetRenderDrawColor(renderer, 0xff, 0xff, 0, 0);
+		for(int x = -r.w / 2; x <= r.w / 2; x++)
+		{
+			for(int y = -r.h / 2; y <= r.h / 2; y++)
+			{
+				if((y < (x + 2) * tx && y > - (x + 2) * tx))
+					continue;
+				if(x * x + y * y <= r.h * r.h / 4)
+					SDL_RenderDrawPoint(renderer, x + r.x + r.w/2, y + r.y + r.h/2);
+
+			}
+		}
+		r.x += r.w;
+	}
+}
+
 static void normal_render(Uint32 Frame)
 {
-	map_draw(&map, renderer, 0xff);
+	map_draw(&map, renderer, (((7 - wait_time) * 51) << 16) | (((7 - wait_time) * 51) << 8) | 0xff);
 	pacman_draw(&pacman, renderer, Frame);
 
 	ghost_draw(&blinky, renderer, 0xff0000);
 	ghost_draw(&pinky, renderer, 0xff55ff);
 	ghost_draw(&inky, renderer, 0xD68802);
 	ghost_draw(&clyde, renderer, 0xffff);
+
+	draw_lives();
 }
 
 static void party_render(Uint32 Frame)

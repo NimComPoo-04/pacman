@@ -2,9 +2,6 @@
 
 int entity_move(entity_t *e, map_t *m)
 {
-	int tx = e->x;
-	int ty = e->y;
-
 	switch(e->direction)
 	{
 		case UP:

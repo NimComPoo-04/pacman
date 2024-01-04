@@ -179,8 +179,8 @@ void map_draw(map_t *map, SDL_Renderer *render, uint32_t color)
 
 				case BIG_FOOD:
 					{
-						SDL_SetRenderDrawColor(render, 0xff, 0xff, 0xae, 0);
-						SDL_Rect food = {lx + lw/3, ly + lh/3, lw/3, lh/3};
+						SDL_SetRenderDrawColor(render, 0xff, 128, SDL_GetTicks() % 255, 0);
+						SDL_Rect food = {lx + lw * 0.3, ly + lh * 0.3, lw * 0.4, lh * 0.4};
 						SDL_RenderFillRect(render, &food);
 					}
 					break;

@@ -68,6 +68,10 @@ static void path_finding(ghost_t *g, map_t *m)
 
 int ghost_update(ghost_t *g, map_t *m, Uint32 frames, void *v)
 {
+	extern int wait_time;
+	if((int)frames < wait_time * 1000/16)
+		return 0;
+
 	switch(g->state)
 	{
 		case FRIGHTENTED:
@@ -143,8 +147,7 @@ int ghost_update(ghost_t *g, map_t *m, Uint32 frames, void *v)
 			}
 
 			path_finding(g, m);
-
-			return 0;
+			return entity_collision_entity(&g->pacman->entity, &g->entity);
 
 		case SCATTER:
 			g->scatter_timer--;
@@ -185,6 +188,7 @@ void ghost_debug_draw(ghost_t *g, SDL_Renderer *ren)
 
 void blinky_target(ghost_t *g, map_t *m, void *v)
 {
+	(void)v;
 	switch(g->state)
 	{
 		case CHASE:
@@ -201,6 +205,7 @@ void blinky_target(ghost_t *g, map_t *m, void *v)
 
 void pinky_target(ghost_t *g, map_t *m, void *v)
 {
+	(void)v;
 	switch(g->state)
 	{
 		case CHASE:
@@ -225,6 +230,7 @@ void pinky_target(ghost_t *g, map_t *m, void *v)
 }
 void inky_target(ghost_t *g, map_t *m, void *v)
 {
+	(void)v;
 	ghost_t *blinky = (ghost_t *)v;
 
 	switch(g->state)
@@ -257,6 +263,7 @@ void inky_target(ghost_t *g, map_t *m, void *v)
 
 void clyde_target(ghost_t *g, map_t *m, void *v)
 {
+	(void)v;
 	switch(g->state)
 	{
 		case CHASE:
@@ -328,7 +335,12 @@ ghost_t ghost_create(pacman_t *p, map_t *m, int type)
 void ghost_draw(ghost_t *g, SDL_Renderer *ren, Uint32 color)
 {
 	if(g->state == FRIGHTENTED)
-		SDL_SetRenderDrawColor(ren, 0, 0, 0xff, 0);
+	{
+		if(g->frighten_timer < 1000/16)
+			SDL_SetRenderDrawColor(ren, SDL_GetTicks() % 255, SDL_GetTicks() % 255, 0xff, 0);
+		else
+			SDL_SetRenderDrawColor(ren, 0, 0, 0xff, 0);
+	}
 	else
 		SDL_SetRenderDrawColor(ren, (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff, 0);
 
@@ -376,7 +388,13 @@ void ghost_draw(ghost_t *g, SDL_Renderer *ren, Uint32 color)
 		.y = g->entity.y - g->entity.h / 4,
 		.w = g->entity.w/3, .h = g->entity.w/3};
 
-	SDL_SetRenderDrawColor(ren, 0xff, 0xff, 0xff, 0xff);
+	if(g->state == FRIGHTENTED && g->frighten_timer < 1000/16)
+	{
+		SDL_SetRenderDrawColor(ren, 255, 0, 0, 0);
+	}
+	else
+		SDL_SetRenderDrawColor(ren, 0xff, 0xff, 0xff, 0xff);
+
 	SDL_RenderFillRect(ren, &r1);
 	SDL_RenderFillRect(ren, &r2);
 
