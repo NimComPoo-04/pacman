@@ -2,6 +2,10 @@
 #include <math.h>
 #include <stdlib.h>
 
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#endif
+
 #include "map.h"
 #include "pacman.h"
 #include "ghost.h"
@@ -26,8 +30,235 @@ static void normal_render(Uint32);
 static void party_render(Uint32 Frames);
 static void deady_render(Uint32 Frames);
 
+
+// Exported variables
 int wait_time = 7;
 int lives = 3;
+
+static int move = 0;
+static int party_frames = 0;
+static int deady_frames = 0;
+
+static int game_loop = 1;
+static int pause = 0;
+
+static Uint32 time = 0;
+static Uint32 Frame = 0;
+static Uint32 Avg = 0;
+
+void main_loop(void)
+{
+	if(!game_loop)
+	{
+		emscripten_cancel_main_loop();
+		return;
+	}
+
+	time = SDL_GetTicks();
+
+	if(SDL_PollEvent(&events))
+	{
+		switch(events.type)
+		{
+			case SDL_QUIT: game_loop = 0; break;
+			case SDL_KEYDOWN:
+				       switch(events.key.keysym.sym)
+				       {
+					       case SDLK_LEFT: move = LEFT; break;
+					       case SDLK_RIGHT: move = RIGHT; break;
+					       case SDLK_UP: move = UP; break;
+					       case SDLK_DOWN: move = DOWN; break;
+					       case SDLK_ESCAPE: game_loop = 0; break;
+					       case SDLK_SPACE:
+								 if(!pause)
+									 SDL_SetRelativeMouseMode(SDL_FALSE);
+								 else
+									 SDL_SetRelativeMouseMode(SDL_TRUE);
+
+								 pause = !pause;
+								 break;
+				       }
+				       break;
+
+			case SDL_MOUSEBUTTONDOWN:
+				       if(events.button.button == SDL_BUTTON_LEFT)
+				       {
+					       if(events.button.x > WIDTH - 30 && events.button.y < 30 && pause)
+						       game_loop = 0;
+
+					       if(!pause)
+						       SDL_SetRelativeMouseMode(SDL_FALSE);
+					       else
+						       SDL_SetRelativeMouseMode(SDL_TRUE);
+
+					       pause = !pause;
+				       }
+				       break;
+
+			case SDL_MOUSEMOTION:
+				       {
+					       const int x = abs(events.motion.xrel);
+					       const int y = abs(events.motion.yrel);
+
+					       if(x > y)
+					       {
+						       if(events.motion.xrel < 0)
+							       move = LEFT;
+						       else
+							       move = RIGHT;
+					       }
+					       else
+					       {
+						       if(events.motion.yrel < 0)
+							       move = UP;
+						       else
+							       move = DOWN;
+					       }
+				       }
+				       break;
+
+			case SDL_FINGERMOTION:
+				       {
+					       const float x = fabs(events.tfinger.dx);
+					       const float y = fabs(events.tfinger.dy);
+
+					       if(x > y)
+					       {
+						       if(events.tfinger.dx < 0)
+							       move = LEFT;
+						       else
+							       move = RIGHT;
+					       }
+					       else
+					       {
+						       if(events.tfinger.dy < 0)
+							       move = UP;
+						       else
+							       move = DOWN;
+					       }
+				       }
+				       break;
+		}
+	}
+
+	if(pause)
+		goto RENDER;
+
+	// Pacman Update
+	int old_move = pacman.entity.direction;
+	pacman.entity.direction = move;
+	if(!entity_move(&pacman.entity, &map))
+	{
+		pacman.entity.direction = old_move;
+		entity_move(&pacman.entity, &map);
+	}
+
+	if(!deady_frames && pacman_eat(&pacman, &map))
+	{
+#define AZ(az) if(az.state == CHASE || az.state == SCATTER)\
+		{\
+			az.state = FRIGHTENTED;\
+			az.frighten_timer = 3000 / 16;\
+		}
+
+		AZ(blinky);
+		AZ(inky);
+		AZ(pinky);
+		AZ(clyde);
+	}
+
+	if(pacman.score == map.food_count)
+	{
+		party_frames = 100;
+		map.food_count = 0;
+		if(wait_time != 0)
+			wait_time--;
+	}
+
+
+	if(party_frames == 1)
+	{
+		SDL_Log("Time Elapsed on Stage: %d", Frame * 16 / 1000);
+		SDL_Log("Time Elapsed on Avarage Per Frame: %d", Avg / Frame);
+		Frame = 0;
+		Avg = 0;
+		init();
+	}
+
+	int isweeded = 0;
+	if(!party_frames && !deady_frames)
+	{
+		// Ghost Update
+		isweeded += ghost_update(&blinky, &map, Frame, NULL);
+		isweeded += ghost_update(&pinky, &map, Frame, NULL);
+		isweeded += ghost_update(&inky, &map, Frame, &blinky);
+		isweeded += ghost_update(&clyde, &map, Frame, NULL);
+	}
+
+	if(isweeded)
+	{
+		deady_frames = 100;
+		if(lives)
+			lives--;
+		else
+		{
+			lives = 3;
+			wait_time = 7;
+		}
+	}
+	if(deady_frames == 1)
+	{
+		SDL_Log("Time Elapsed on Stage: %d", Frame * 16 / 1000);
+		SDL_Log("Time Elapsed on Avarage Per Frame: %d", Avg / Frame);
+		Frame = 0;
+		Avg = 0;
+		init();
+	}
+
+	// RENDERING
+RENDER:
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+	SDL_RenderClear(renderer);
+
+	// ghost_update(&blinky, &map, Frame);
+	if(party_frames)
+	{
+		party_render(Frame);
+		party_frames--;
+	}
+	else if(deady_frames)
+	{
+		deady_render(Frame);
+		deady_frames--;
+	}
+	else
+		normal_render(Frame);
+
+	if(pause)
+	{
+		SDL_SetRenderDrawColor(renderer, 0xff, 0, 0, 0);
+		SDL_Rect r = {.x = 10, .y = 10, .w = 10, .h = 20};
+		SDL_RenderFillRect(renderer, &r);
+		r.x += 15;
+		SDL_RenderFillRect(renderer, &r);
+
+		SDL_RenderDrawLine(renderer, WIDTH - 10, 10, WIDTH - 30, 30);
+		SDL_RenderDrawLine(renderer, WIDTH - 9, 10, WIDTH - 29, 30);
+		SDL_RenderDrawLine(renderer, WIDTH - 8, 10, WIDTH - 28, 30);
+
+		SDL_RenderDrawLine(renderer, WIDTH - 30, 10, WIDTH - 10, 30);
+		SDL_RenderDrawLine(renderer, WIDTH - 29, 10, WIDTH - 9, 30);
+		SDL_RenderDrawLine(renderer, WIDTH - 28, 10, WIDTH - 8, 30);
+	}
+
+	SDL_RenderPresent(renderer);
+
+	// Time Keeping
+	Avg += SDL_GetTicks() - time;
+	// while(SDL_GetTicks() - time < 16); // 60 fps <=> 16.66 spf NO NEED
+	time = SDL_GetTicks();
+	Frame += 1;
+}
 
 int main(void)
 {
@@ -44,224 +275,11 @@ int main(void)
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
 	// Init
-	int game_loop = 1;
-	int pause = 0;
-
-	Uint32 time = SDL_GetTicks();
-	Uint32 Frame = 0;
-	Uint32 Avg = 0;
 
 	init();
-
-	int move = 0;
-	int party_frames = 0;
-	int deady_frames = 0;
-
-	while(game_loop)
-	{
-		while(SDL_PollEvent(&events))
-		{
-			switch(events.type)
-			{
-				case SDL_QUIT: game_loop = 0; break;
-				case SDL_KEYDOWN:
-					switch(events.key.keysym.sym)
-					{
-						case SDLK_LEFT: move = LEFT; break;
-						case SDLK_RIGHT: move = RIGHT; break;
-						case SDLK_UP: move = UP; break;
-						case SDLK_DOWN: move = DOWN; break;
-						case SDLK_ESCAPE: game_loop = 0; break;
-						case SDLK_SPACE:
-								  if(!pause)
-									  SDL_SetRelativeMouseMode(SDL_FALSE);
-								  else
-									  SDL_SetRelativeMouseMode(SDL_TRUE);
-
-								  pause = !pause;
-							break;
-					}
-					break;
-
-				case SDL_MOUSEBUTTONDOWN:
-					if(events.button.button == SDL_BUTTON_LEFT)
-					{
-						if(events.button.x > WIDTH - 30 && events.button.y < 30 && pause)
-							game_loop = 0;
-
-						if(!pause)
-							SDL_SetRelativeMouseMode(SDL_FALSE);
-						else
-							SDL_SetRelativeMouseMode(SDL_TRUE);
-
-						pause = !pause;
-					}
-					break;
-
-				case SDL_MOUSEMOTION:
-					{
-						const int x = abs(events.motion.xrel);
-						const int y = abs(events.motion.yrel);
-
-						if(x > y)
-						{
-							if(events.motion.xrel < 0)
-								move = LEFT;
-							else
-								move = RIGHT;
-						}
-						else
-						{
-							if(events.motion.yrel < 0)
-								move = UP;
-							else
-								move = DOWN;
-						}
-					}
-					break;
-
-				case SDL_FINGERMOTION:
-					{
-						const float x = fabs(events.tfinger.dx);
-						const float y = fabs(events.tfinger.dy);
-
-						if(x > y)
-						{
-							if(events.tfinger.dx < 0)
-								move = LEFT;
-							else
-								move = RIGHT;
-						}
-						else
-						{
-							if(events.tfinger.dy < 0)
-								move = UP;
-							else
-								move = DOWN;
-						}
-					}
-					break;
-			}
-		}
-
-		if(pause)
-			goto RENDER;
-
-		// Pacman Update
-		int old_move = pacman.entity.direction;
-		pacman.entity.direction = move;
-		if(!entity_move(&pacman.entity, &map))
-		{
-			pacman.entity.direction = old_move;
-			entity_move(&pacman.entity, &map);
-		}
-
-		if(!deady_frames && pacman_eat(&pacman, &map))
-		{
-#define AZ(az) if(az.state == CHASE || az.state == SCATTER)\
-			{\
-				az.state = FRIGHTENTED;\
-				az.frighten_timer = 3000 / 16;\
-			}
-
-			AZ(blinky);
-			AZ(inky);
-			AZ(pinky);
-			AZ(clyde);
-		}
-
-		if(pacman.score == map.food_count)
-		{
-			party_frames = 100;
-			map.food_count = 0;
-			if(wait_time != 0)
-				wait_time--;
-		}
-
-
-		if(party_frames == 1)
-		{
-			SDL_Log("Time Elapsed on Stage: %d", Frame * 16 / 1000);
-			SDL_Log("Time Elapsed on Avarage Per Frame: %d", Avg / Frame);
-			Frame = 0;
-			Avg = 0;
-			init();
-		}
-
-		int isweeded = 0;
-		if(!party_frames && !deady_frames)
-		{
-			// Ghost Update
-			isweeded += ghost_update(&blinky, &map, Frame, NULL);
-			isweeded += ghost_update(&pinky, &map, Frame, NULL);
-			isweeded += ghost_update(&inky, &map, Frame, &blinky);
-			isweeded += ghost_update(&clyde, &map, Frame, NULL);
-		}
-
-		if(isweeded)
-		{
-			deady_frames = 100;
-			if(lives)
-				lives--;
-			else
-			{
-				lives = 3;
-				wait_time = 7;
-			}
-		}
-		if(deady_frames == 1)
-		{
-			SDL_Log("Time Elapsed on Stage: %d", Frame * 16 / 1000);
-			SDL_Log("Time Elapsed on Avarage Per Frame: %d", Avg / Frame);
-			Frame = 0;
-			Avg = 0;
-			init();
-		}
-
-		// RENDERING
-RENDER:
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-		SDL_RenderClear(renderer);
-
-		// ghost_update(&blinky, &map, Frame);
-		if(party_frames)
-		{
-			party_render(Frame);
-			party_frames--;
-		}
-		else if(deady_frames)
-		{
-			deady_render(Frame);
-			deady_frames--;
-		}
-		else
-			normal_render(Frame);
-
-		if(pause)
-		{
-			SDL_SetRenderDrawColor(renderer, 0xff, 0, 0, 0);
-			SDL_Rect r = {.x = 10, .y = 10, .w = 10, .h = 20};
-			SDL_RenderFillRect(renderer, &r);
-			r.x += 15;
-			SDL_RenderFillRect(renderer, &r);
-
-			SDL_RenderDrawLine(renderer, WIDTH - 10, 10, WIDTH - 30, 30);
-			SDL_RenderDrawLine(renderer, WIDTH - 9, 10, WIDTH - 29, 30);
-			SDL_RenderDrawLine(renderer, WIDTH - 8, 10, WIDTH - 28, 30);
-
-			SDL_RenderDrawLine(renderer, WIDTH - 30, 10, WIDTH - 10, 30);
-			SDL_RenderDrawLine(renderer, WIDTH - 29, 10, WIDTH - 9, 30);
-			SDL_RenderDrawLine(renderer, WIDTH - 28, 10, WIDTH - 8, 30);
-		}
-
-		SDL_RenderPresent(renderer);
-
-		// Time Keeping
-		Avg += SDL_GetTicks() - time;
-		while(SDL_GetTicks() - time < 16); // 60 fps <=> 16.66 spf
-		time = SDL_GetTicks();
-		Frame += 1;
-	}
+	
+	// main_loop;
+	emscripten_set_main_loop(main_loop, -1, 1);
 
 	free(map.buffer);
 

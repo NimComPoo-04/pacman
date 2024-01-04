@@ -46,8 +46,8 @@ int entity_move(entity_t *e, map_t *m)
 		
 		if(count >= 100)
 		{
-			e->x = 14.5;
-			e->y = 14.5;
+			e->x = 14;
+			e->y = 14;
 		}
 
 		return 0;
