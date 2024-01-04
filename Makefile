@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -ggdb -std=c18
+CFLAGS = -Wall -Wextra -std=c18 -O0 -ggdb # -fsanitize=address
 
 SRC = $(wildcard *.c)
 OBJ = $(patsubst %.c, obj/%.o, $(SRC))

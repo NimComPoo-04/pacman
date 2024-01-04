@@ -35,6 +35,8 @@ static char def_map_map_buffer[] =
 		"*..........................*"
 		"****************************";
 
+static char editable_buffer[sizeof def_map_map_buffer];
+
 static const map_t def_map = {
 	.width = 28,
 	.height = 31,
@@ -63,8 +65,7 @@ map_t map_create_default(int width, int height)
 
 	map_pos_at = at;
 
-	if(m.buffer == NULL)
-		m.buffer = calloc(sizeof(char), m.width * m.height);
+	m.buffer = editable_buffer;
 	memcpy(m.buffer, def_map_map_buffer, sizeof def_map_map_buffer);
 
 	int x = 0, y = 0;

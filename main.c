@@ -263,8 +263,6 @@ RENDER:
 		Frame += 1;
 	}
 
-	free(map.buffer);
-
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
