@@ -83,6 +83,21 @@ int main(void)
 					}
 					break;
 
+				case SDL_MOUSEBUTTONDOWN:
+					if(events.button.button == SDL_BUTTON_LEFT)
+					{
+						if(events.button.x > WIDTH - 30 && events.button.y < 30 && pause)
+							game_loop = 0;
+
+						if(!pause)
+							SDL_SetRelativeMouseMode(SDL_FALSE);
+						else
+							SDL_SetRelativeMouseMode(SDL_TRUE);
+
+						pause = !pause;
+					}
+					break;
+
 				case SDL_MOUSEMOTION:
 					{
 						const int x = abs(events.motion.xrel);
@@ -98,6 +113,28 @@ int main(void)
 						else
 						{
 							if(events.motion.yrel < 0)
+								move = UP;
+							else
+								move = DOWN;
+						}
+					}
+					break;
+
+				case SDL_FINGERMOTION:
+					{
+						const float x = fabs(events.tfinger.dx);
+						const float y = fabs(events.tfinger.dy);
+
+						if(x > y)
+						{
+							if(events.tfinger.dx < 0)
+								move = LEFT;
+							else
+								move = RIGHT;
+						}
+						else
+						{
+							if(events.tfinger.dy < 0)
 								move = UP;
 							else
 								move = DOWN;
@@ -207,6 +244,14 @@ RENDER:
 			SDL_RenderFillRect(renderer, &r);
 			r.x += 15;
 			SDL_RenderFillRect(renderer, &r);
+
+			SDL_RenderDrawLine(renderer, WIDTH - 10, 10, WIDTH - 30, 30);
+			SDL_RenderDrawLine(renderer, WIDTH - 9, 10, WIDTH - 29, 30);
+			SDL_RenderDrawLine(renderer, WIDTH - 8, 10, WIDTH - 28, 30);
+
+			SDL_RenderDrawLine(renderer, WIDTH - 30, 10, WIDTH - 10, 30);
+			SDL_RenderDrawLine(renderer, WIDTH - 29, 10, WIDTH - 9, 30);
+			SDL_RenderDrawLine(renderer, WIDTH - 28, 10, WIDTH - 8, 30);
 		}
 
 		SDL_RenderPresent(renderer);
