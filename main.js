@@ -46,13 +46,13 @@ function main_loop(time)
 			pacman.move(map)
 		}
 
-		if(!party_frames && !deady_frames)
+		if(party_frames != 0 && deady_frames != 0)
 		{
 			update()
 		}
 		else
 		{
-			if(party_frames)
+			if(party_frames > 0)
 			{
 				if(party_frames == 1)
 				{
@@ -117,7 +117,7 @@ function render()
 	pacman.draw(ctx);
 
 	if(party_frames > 0)
-		map.drw(ctx, ['green', 'lightgreen', 'limegreen', 'white'][party_frames % 4]);
+		map.draw(ctx, ['green', 'lightgreen', 'limegreen', 'white'][party_frames % 4]);
 	else if(deady_frames > 0)
 		map.draw(ctx, ['crimson', 'orangered', 'red', 'white'][deady_frames % 4]);
 	else
@@ -179,7 +179,7 @@ function update()
 		|| inky.update(map, pacman, blinky)
 		|| clyde.update(map, pacman))
 	{
-		deady_frames = 100
+//		deady_frames = 100
 	}
 }
 
