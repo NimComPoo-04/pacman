@@ -46,13 +46,13 @@ function main_loop(time)
 			pacman.move(map)
 		}
 
-		if(party_frames != 0 && deady_frames != 0)
+		if(!party_frames && !deady_frames)
 		{
 			update()
 		}
 		else
 		{
-			if(party_frames > 0)
+			if(party_frames)
 			{
 				if(party_frames == 1)
 				{
@@ -179,7 +179,7 @@ function update()
 		|| inky.update(map, pacman, blinky)
 		|| clyde.update(map, pacman))
 	{
-//		deady_frames = 100
+		deady_frames = 100
 	}
 }
 
