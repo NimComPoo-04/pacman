@@ -16,7 +16,7 @@ obj/%.o: %.c
 	$(CC) $(CFLAGS) -o $@ $^ -c
 
 clean:
-	rm -rf obj pakman
+	rm -rf obj pacman
 
 run: pacman
 	./pacman

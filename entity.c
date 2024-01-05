@@ -30,9 +30,26 @@ int entity_move(entity_t *e, map_t *m)
 			vx = 1;
 			break;
 	}
+	if(entity_collision_map(e, m, DOOR) && e->direction == DOWN && !e->allow_door)
+	{
+		e->x = tx;
+		e->y = ty;
 
-	if(entity_collision_map(e, m, WALL)
-			|| (entity_collision_map(e, m, DOOR) && e->direction == DOWN && !e->allow_door))
+		// FIXME: EVIL LOOP REMOVE
+		// This loop is not good for health at all
+		// Probably fine for slow vx and vy.
+		while(!entity_collision_map(e, m, DOOR))
+		{
+			e->x += vx;
+			e->y += vy;
+		}
+
+		e->x -= vx;
+		e->y -= vy;
+
+		return 0;
+	}
+	if(entity_collision_map(e, m, WALL))	
 	{
 		e->x = tx;
 		e->y = ty;
