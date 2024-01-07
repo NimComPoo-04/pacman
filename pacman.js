@@ -74,7 +74,7 @@ class Pacman extends Entity
 
 		if(k == BIG_FOOD || k == NORMAL_FOOD)
 		{
-			map.pat(x, y, NONE);
+			map.pat(parseInt(x), parseInt(y), NONE);
 			this.score++;
 		}
 

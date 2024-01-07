@@ -8,7 +8,7 @@ let game_loop = true
 let pause = false
 
 let StartTime = 0
-let FrameTime = 0
+let FrameTime = performance.now()
 
 let Dt = 0
 
@@ -34,7 +34,7 @@ let deady_frames = 0
 function main_loop(time)
 {
 	Dt = performance.now() - FrameTime
-	FrameTime = performance.now()
+	FrameTime = performance.now() - (Dt % 16)
 
 	if(!pause)
 	{
@@ -59,8 +59,7 @@ function main_loop(time)
 					init()
 					wait_time++
 				}
-				else
-					party_frames--
+				party_frames--
 			}
 			else
 			{
@@ -83,7 +82,12 @@ function main_loop(time)
 	render()
 
 	if(game_loop)
-		window.requestAnimationFrame(main_loop);
+	{
+		if(1000/60 - Dt <= 0)
+			window.requestAnimationFrame(main_loop);
+		else
+			setTimeout(() => {window.requestAnimationFrame(main_loop);}, 1000/60 - Dt)
+	}
 }
 
 function current_time()
@@ -107,7 +111,7 @@ function init()
 	StartTime = performance.now()
 }
 
-const map_colors = ['deepskyblue', 'dogerblue', 'cornflowerblue', 'royalblue', 'slateblue', 'mediumslateblue', 'aquamarine']
+const map_colors = ['deepskyblue', 'dodgerblue', 'cornflowerblue', 'royalblue', 'slateblue', 'mediumslateblue', 'aquamarine']
 function render()
 {
 	// Clearing rect
@@ -194,6 +198,8 @@ addEventListener('keydown', (e) => {
 		case 32: pause = !pause; break;
 
 		case 27: game_loop = false;
+
+		case 65: console.log(Dt);
 	}
 }, false)
 
@@ -201,13 +207,11 @@ let startX = 0
 let startY = 0
 
 addEventListener('touchstart', (e) => {
-	e.preventDefault()
 	startX = e.touches[0].clientX
 	startY = e.touches[0].clientY
 }, false)
 
 addEventListener('touchend', (e) => {
-	e.preventDefault()
 	let dx = e.changedTouches[0].clientX - startX
 	let dy = e.changedTouches[0].clientY - startY
 

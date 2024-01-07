@@ -53,15 +53,14 @@ class Entity
 
 		if(this.collision(map, DOOR) && this.direction == DOWN && !this.allow_door)
 		{
-			console.log(this.allow_door)
-
+			/*
 			this.x = tx;
 			this.y = ty;
 
 			// FIXME: EVIL LOOP REMOVE
 			// This loop is not good for health at all
 			// Probably fine for slow vx and vy.
-			while(!this.collision(map, DOOR))
+			while(this.collision(map, DOOR))
 			{
 				this.x += vx;
 				this.y += vy;
@@ -69,13 +68,17 @@ class Entity
 
 			this.x -= vx;
 			this.y -= vy;
+			*/
+
+			this.x = tx // parseInt(tx / map.cell_width) * map.cell_width + map.cell_width / 2
+			this.y = ty // parseInt(ty / map.cell_height) * map.cell_height + map.cell_height / 2
 
 			return false;
 		}
 
 		if(this.collision(map, WALL))
 		{
-
+			/*
 			this.x = tx;
 			this.y = ty;
 
@@ -90,6 +93,10 @@ class Entity
 
 			this.x -= vx;
 			this.y -= vy;
+			*/
+
+			this.x = tx // parseInt(tx / map.cell_width) * map.cell_width + map.cell_width / 2
+			this.y = ty // parseInt(ty / map.cell_height) * map.cell_height + map.cell_height / 2
 
 			return false;
 		}
@@ -105,12 +112,12 @@ class Entity
 
 	collision(other, type)
 	{
-		if(other instanceof Entity)
+		if(type == undefined)
 		{
 			let d = Math.hypot(this.x - other.x, this.y - other.y);
 			return d < this.w/2 || d < other.w/2;
 		}
-		else if(other instanceof Map)
+		else
 		{
 			let x = this.x / other.cell_width;
 			let y = this.y / other.cell_height;
@@ -130,8 +137,6 @@ class Entity
 
 			return false;
 		}
-		else
-			throw 'Not Type Specified!!'
 	}
 
 	draw(ctx, color)

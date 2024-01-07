@@ -218,21 +218,15 @@ class Ghost extends Entity
 		if(this.state != DEAD)
 		{
 			ctx.beginPath()
-			for(let x = -cw; x <= cw; x++)
+			for(let x = -cw * 0.86; x <= cw * 0.86; x++)
 			{
-				for(let y = -ch; y <= ch; y++)
-				{
-					const tx = x / cw;
+				const tx = x / cw;
 
-					if(tx < -0.86 || tx > 0.86)
-						continue;
+				const cty = -3 * Math.pow(Math.abs(tx), 2.8) + 2;
+				const dty = 0.2 * (Math.cos(10 * tx + current_time()/100) + 1);
 
-					const cty = -3 * Math.pow(Math.abs(tx), 2.8) + 2;
-					const dty = 0.2 * (Math.cos(10 * tx + current_time()/100) + 1);
-
-					ctx.moveTo(x + offset_x, -cty * cw + offset_y)
-					ctx.lineTo(x + offset_x, -dty * cw + offset_y)
-				}
+				ctx.moveTo(x + offset_x, -cty * cw + offset_y)
+				ctx.lineTo(x + offset_x, -dty * cw + offset_y)
 			}
 			ctx.stroke()
 		}

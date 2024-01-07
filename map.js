@@ -72,14 +72,8 @@ class Map
 		return this.buffer[y * this.width + x]
 	}
 
-	pat(x, y, value = NONE)
+	pat(x, y, value)
 	{
-		x = parseInt(x)
-		y = parseInt(y)
-
-		if(x >= this.width || x < 0) return
-		if(y >= this.height || y < 0) return
-
 		this.buffer[y * this.width + x] = value
 	}
 
@@ -90,6 +84,10 @@ class Map
 
 		const ldw = lw * 10 / 29
 		const ldh = lh * 10 / 29
+
+		ctx.beginPath()
+		ctx.lineWidth = 2
+		ctx.strokeStyle = color
 
 		for(let x = 0; x < this.width; x++)
 		{
@@ -105,10 +103,6 @@ class Map
 
 					case WALL:
 						{
-							ctx.beginPath()
-							ctx.lineWidth = 2
-							ctx.strokeStyle = color
-
 							let c = 1;
 
 							if(this.at(x + 1, y) != WALL)
@@ -164,20 +158,13 @@ class Map
 								ctx.lineTo(lx + ldw, ly + lh)
 							}
 
-							ctx.stroke();
 						}
 						break;
 
 					case DOOR:
 						{
-							ctx.beginPath()
-							ctx.lineWidth = 2
-							ctx.strokeStyle = '#ffeeee'
-
-							ctx.moveTo(lx, ly + ldh)
-							ctx.lineTo(lx + lw, ly + ldh)
-
-							ctx.stroke();
+							ctx.fillStyle = '#ffeeee'
+							ctx.fillRect(lx, ly + ldh, lw, ldh)
 						}
 						break;
 
@@ -197,5 +184,7 @@ class Map
 				}
 			}
 		}
+
+		ctx.stroke();
 	}
 }
