@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include <math.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "map.h"
 #include "pacman.h"
@@ -29,6 +30,9 @@ static void deady_render(Uint32 Frames);
 int wait_time = 7;
 int lives = 3;
 
+static int party_frames = 0;
+static int deady_frames = 0;
+
 int main(void)
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER))
@@ -43,10 +47,10 @@ int main(void)
 
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-	// Init
 	int game_loop = 1;
 	int pause = 0;
 
+	// Init
 	Uint32 time = SDL_GetTicks();
 	Uint32 Frame = 0;
 	Uint32 Avg = 0;
@@ -54,8 +58,6 @@ int main(void)
 	init();
 
 	int move = 0;
-	int party_frames = 0;
-	int deady_frames = 0;
 
 	while(game_loop)
 	{

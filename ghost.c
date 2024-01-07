@@ -354,21 +354,18 @@ void ghost_draw(ghost_t *g, SDL_Renderer *ren, Uint32 color)
 	{
 		for(int x = -cw; x <= cw; x++)
 		{
-			for(int y = -ch; y <= ch; y++)
-			{
-				float tx = x / cw;
+			float tx = x / cw;
 
-				if(tx < -0.86 || tx > 0.86)
-					continue;
+			if(tx < -0.86 || tx > 0.86)
+				continue;
 
-				float cty = -3 * pow(fabs(tx), 2.8) + 2;
-				float dty = 0.2 * (cos(10 * tx + SDL_GetTicks()/100) + 1);
+			float cty = -3 * pow(fabs(tx), 2.8) + 2;
+			float dty = 0.2 * (cos(10 * tx + SDL_GetTicks()/100) + 1);
 
-				SDL_RenderDrawLine(ren, x + offset_x,
-						-cty * cw + offset_y,
-						x + offset_x,
-						-dty * cw + offset_y);
-			}
+			SDL_RenderDrawLine(ren, x + offset_x,
+					-cty * cw + offset_y,
+					x + offset_x,
+					-dty * cw + offset_y);
 		}
 	}
 	else
